@@ -6,53 +6,33 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
   config_param :record_log_tag, :string, default: 'log'
 
   # s3
-  config_param :aws_key_id, :string, secret: true, default: nil,
-               desc: "AWS access key id to access s3 bucket."
-  config_param :aws_sec_key, :string, secret: true, default: nil,
-               desc: "AWS secret key id to access s3 bucket."
-  config_param :aws_iam_role, :string, secret: true, default: nil,
-               desc: "AWS IAM Role to access s3 bucket."
-  config_param :s3_region, :string,
-               desc: 'AWS region name.'
-  config_param :s3_bucket, :string,
-               desc: 'bucket name. S3 bucket must be same as the region of your Redshift cluster.'
-  config_param :s3_endpoint, :string, default: nil,
-               desc: "S3 endpoint."
-  config_param :path, :string, default: "",
-               desc: "S3 path to input."
-  config_param :timestamp_key_format, :string, default: 'year=%Y/month=%m/day=%d/hour=%H/%Y%m%d-%H%M',
-               desc: 'The format of the object keys. It can include date-format directives.'
+  config_param :aws_key_id, :string, secret: true, default: nil, desc: "AWS access key id to access s3 bucket."
+  config_param :aws_sec_key, :string, secret: true, default: nil, desc: "AWS secret key id to access s3 bucket."
+  config_param :aws_iam_role, :string, secret: true, default: nil, desc: "AWS IAM Role to access s3 bucket."
+  config_param :s3_region, :string, desc: 'AWS region name.'
+  config_param :s3_bucket, :string, desc: 'bucket name. S3 bucket must be same as the region of your Redshift cluster.'
+  config_param :s3_endpoint, :string, default: nil, desc: "S3 endpoint."
+  config_param :path, :string, default: "", desc: "S3 path to input."
+  config_param :timestamp_key_format, :string, default: 'year=%Y/month=%m/day=%d/hour=%H/%Y%m%d-%H%M', desc: 'The format of the object keys. It can include date-format directives.'
   config_param :utc, :bool, default: false
-  config_param :s3_server_side_encryption, :string, default: nil,
-               desc: "S3 Server-Side Encryption (Only aes256 is supported)."
+  config_param :s3_server_side_encryption, :string, default: nil, desc: "S3 Server-Side Encryption (Only aes256 is supported)."
 
   # redshift
-  config_param :redshift_host, :string,
-               desc: "The end point(or hostname) of your Amazon Redshift cluster."
-  config_param :redshift_port, :integer, default: 5439,
-               desc: "Port number."
-  config_param :redshift_dbname, :string,
-               desc: "Database name."
-  config_param :redshift_user, :string,
-               desc: "User name."
-  config_param :redshift_password, :string, secret: true,
-               desc: "Password for the user name."
-  config_param :redshift_tablename, :string,
-               desc: "Table name to store data."
-  config_param :redshift_schemaname, :string, default: nil,
-               desc: 'Schema name to store data. By default, this option is not set and find table without schema as your own search_path.'
+  config_param :redshift_host, :string, desc: "The end point(or hostname) of your Amazon Redshift cluster."
+  config_param :redshift_port, :integer, default: 5439, desc: "Port number."
+  config_param :redshift_dbname, :string, desc: "Database name."
+  config_param :redshift_user, :string, desc: "User name."
+  config_param :redshift_password, :string, secret: true, desc: "Password for the user name."
+  config_param :redshift_tablename, :string, desc: "Table name to store data."
+  config_param :redshift_schemaname, :string, default: nil, desc: 'Schema name to store data. By default, this option is not set and find table without schema as your own search_path.'
   config_param :redshift_copy_base_options, :string , default: "ESCAPE FILLRECORD ACCEPTANYDATE TRUNCATECOLUMNS"
   config_param :redshift_copy_options, :string , default: nil
-  config_param :redshift_connect_timeout, :integer, default: 10,
-               desc: "Maximum time to wait for connection to succeed."
-  config_param :redshift_copy_columns, :string, default: nil,
-               desc: 'Columns for copying. Value needs to be comma-separated like id,name,age'
+  config_param :redshift_connect_timeout, :integer, default: 10, desc: "Maximum time to wait for connection to succeed."
+  config_param :redshift_copy_columns, :string, default: nil, desc: 'Columns for copying. Value needs to be comma-separated like id,name,age'
 
   # file format
-  config_param :file_type, :string, default: nil,
-               desc: "File format of the source data. csv, tsv, msgpack or json are available."
-  config_param :delimiter, :string, default: nil,
-               desc: 'Delimiter of the source data. This option will be ignored if file_type is specified. '
+  config_param :file_type, :string, default: nil, desc: "File format of the source data. csv, tsv, msgpack or json are available."
+  config_param :delimiter, :string, default: nil, desc: 'Delimiter of the source data. This option will be ignored if file_type is specified. '
 
   # for debug
   config_param :log_suffix, :string, default: ''
@@ -74,8 +54,8 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
     if !check_credentials
       fail ConfigError, "aws_key_id and aws_sec_key is required. or, use aws_iam_role instead."
     end
-    @path = "#{@path}/" unless @path.end_with?('/') # append last slash
-    @path = @path[1..-1] if @path.start_with?('/')  # remove head slash
+    @path = "#{@path}/" unless @path.end_with?('/')
+    @path = @path[1..-1] if @path.start_with?('/')
     @utc = true if conf['utc']
     @db_conf = {
       host: @redshift_host,
@@ -89,10 +69,10 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
     @delimiter = determine_delimiter(@file_type) if @delimiter.nil? or @delimiter.empty?
     $log.debug format_log("redshift file_type:#{@file_type} delimiter:'#{@delimiter}'")
     @table_name_with_schema = [@redshift_schemaname, @redshift_tablename].compact.join('.')
-    @redshift_copy_columns = if !@redshift_copy_columns.to_s.empty?
-                               @redshift_copy_columns.split(/[,\s]+/)
-                             else
+    @redshift_copy_columns = if @redshift_copy_columns.to_s.empty?
                                nil
+                             else
+                               @redshift_copy_columns.split(/[,\s]+/)
                              end
     @copy_sql_template = build_redshift_copy_sql_template
     @s3_server_side_encryption = @s3_server_side_encryption.to_sym if @s3_server_side_encryption
@@ -132,6 +112,11 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
     insert_logs chunk
   end
 
+  def try_write(chunk)
+    insert_logs chunk
+    commit_write chunk.unique_id
+  end
+
   def insert_logs(chunk)
     $log.debug format_log("start creating gz.")
     exec_copy s3_uri(create_gz_file(chunk))
@@ -149,7 +134,6 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
     if tmp
       key = next_gz_path
       @s3_client.put_object({
-          acl: :bucket_owner_full_control,
           server_side_encryption: @s3_server_side_encryption,
           bucket: @s3_bucket,
           body: tmp,
@@ -187,7 +171,7 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
       $log.info format_log("completed copying to redshift. s3_uri=#{s3_uri}")
       true
     rescue RedshiftError => e
-      if e.to_s =~ IGNORE_REDSHIFT_ERROR_REGEXP
+      if e.to_s =~ /^ERROR:  Load into table '[^']+' failed\./
         $log.error format_log("failed to copy data into redshift due to load error. s3_uri=#{s3_uri}"), error:e.to_s
         return false
       end
@@ -209,6 +193,10 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
     else
       message
     end
+  end
+
+  def formatted_to_msgpack_binary
+    true
   end
 
   private
@@ -289,20 +277,19 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
       end
     end
 
-    # convert json to tsv format text
     gzw = nil
     begin
       gzw = Zlib::GzipWriter.new(dst_file)
       chunk.msgpack_each do |record|
         next unless record
-#        begin
+        begin
           tsv_text = hash_to_table_text(record, redshift_table_columns)
           gzw.write(tsv_text) if tsv_text and not tsv_text.empty?
-        # rescue => e
-        #   text = record.is_a?(Hash) ? record[@record_log_tag] : record
-        #   $log.error format_log("failed to create table text from #{@file_type}. text=(#{text})"), error:e.to_s
-        #   $log.error_backtrace
-        # end
+        rescue => e
+          text = record.is_a?(Hash) ? record[@record_log_tag] : record
+          $log.error format_log("failed to create table text from #{@file_type}. text=(#{text})"), error:e.to_s
+          $log.error_backtrace
+        end
       end
       return nil unless gzw.pos > 0
     ensure
@@ -344,7 +331,7 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
     val_list.collect do |val|
       case val
       when nil
-        NULL_CHAR_FOR_COPY
+        "\\N"
       when ''
         ''
       when Hash, Array
@@ -377,8 +364,6 @@ class RedshiftError < StandardError
 end
 
 class RedshiftConnection
-  REDSHIFT_CONNECT_TIMEOUT = 10.0
-
   def initialize(db_conf)
     @db_conf = db_conf
     @connection = nil
@@ -414,20 +399,18 @@ class RedshiftConnection
   def create_redshift_connection
     conn = PG::Connection.connect_start(db_conf)
     raise RedshiftError.new("Unable to create a new connection.") unless conn
-    if conn.status == PG::CONNECTION_BAD
-      raise RedshiftError.new("Connection failed: %s" % [ conn.error_message ])
-    end
+    raise RedshiftError.new("Connection failed: %s" % [ conn.error_message ]) if conn.status == PG::CONNECTION_BAD
 
     socket = conn.socket_io
     poll_status = PG::PGRES_POLLING_WRITING
     until poll_status == PG::PGRES_POLLING_OK || poll_status == PG::PGRES_POLLING_FAILED
       case poll_status
       when PG::PGRES_POLLING_READING
-        IO.select([socket], nil, nil, REDSHIFT_CONNECT_TIMEOUT) or
-          raise RedshiftError.new("Asynchronous connection timed out!(READING)")
+        io = IO.select([socket], nil, nil, db_conf[:connect_timeout])
+        raise RedshiftError.new("Asynchronous connection timed out!(READING)") unless io
       when PG::PGRES_POLLING_WRITING
-        IO.select(nil, [socket], nil, REDSHIFT_CONNECT_TIMEOUT) or
-          raise RedshiftError.new("Asynchronous connection timed out!(WRITING)")
+        io = IO.select(nil, [socket], nil, db_conf[:connect_timeout])
+        raise RedshiftError.new("Asynchronous connection timed out!(WRITING)") unless io
       end
       poll_status = conn.connect_poll
     end

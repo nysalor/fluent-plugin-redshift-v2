@@ -12,7 +12,6 @@ RSpec.configure do |config|
 
     pid = Process.fork do
       Dir.mktmpdir do |dir|
-        def $stderr.write(*_args); end  # Suppress outputs
         FakeS3::Server.new('0.0.0.0', 12345, FakeS3::FileStore.new(dir, false), 'localhost', nil, nil).serve
       end
     end

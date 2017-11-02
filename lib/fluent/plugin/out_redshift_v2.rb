@@ -91,7 +91,8 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
       }
     end
     options[:endpoint] = @s3_endpoint if @s3_endpoint
-    @s3_client = Aws::S3::Client.new(options)
+    @client = Aws::S3::Client.new(options)
+    @bucket = Aws::S3::Bucket.new @s3_bucket, client: @client
     @redshift_connection = RedshiftConnection.new(@db_conf)
   end
 
@@ -133,9 +134,8 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
 
     if tmp
       key = next_gz_path
-      @s3_client.put_object({
+      @bucket.put_object({
           server_side_encryption: @s3_server_side_encryption,
-          bucket: @s3_bucket,
           body: tmp,
           key: key
         })
@@ -154,10 +154,9 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
     path = ''
     loop do
       path = "#{@path}#{timestamp_key}_#{'%02d' % i}.gz"
-      begin
-        @s3_client.head_object(key: path, bucket: @s3_bucket)
+      if @bucket.object(path).exists?
         i += 1
-      rescue Aws::S3::Errors::NotFound
+      else
         break
       end
     end

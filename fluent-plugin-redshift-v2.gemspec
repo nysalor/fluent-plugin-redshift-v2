@@ -4,13 +4,14 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-redshift-v2"
-  spec.version       = "0.1.1"
+  spec.version       = "0.1.2"
   spec.authors       = ["Jun Yokoyama"]
   spec.email         = ["jun@larus.org"]
 
   spec.description   = %q{Amazon Redshift output plugin for Fluentd (inspired by fluent-plugin-redshift)}
   spec.summary       = spec.description
   spec.homepage      = "https://github.com/nysalor/fluent-plugin-redshift-v2"
+  spec.license       = "Apache-2.0"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.

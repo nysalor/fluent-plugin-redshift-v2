@@ -125,12 +125,12 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
 
   def create_gz_file(chunk)
     tmp = Tempfile.new("s3-")
-    tmp =
-      if json? || msgpack?
-        create_gz_file_from_structured_data(tmp, chunk)
-      else
-        create_gz_file_from_flat_data(tmp, chunk)
-      end
+    tmp.binmode
+    if json? || msgpack?
+      tmp = create_gz_file_from_structured_data(tmp, chunk)
+    else
+      tmp = create_gz_file_from_flat_data(tmp, chunk)
+    end
 
     if tmp
       key = next_gz_path

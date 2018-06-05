@@ -69,6 +69,13 @@ describe Fluent::Plugin::RedshiftOutputV2 do
         expect { s3_client.head_object(bucket: s3_bucket, key: instance.last_gz_path) }.not_to raise_error
       end
 
+      it "exec_copy should create exact gz file" do
+        driver.run(default_tag: "test.metrics") { driver.feed(record) }
+        f = s3_client.get_object(bucket: s3_bucket, key: instance.last_gz_path)
+        gz = Zlib::GzipReader.new(f.body)
+        expect { gz.read }.not_to raise_error
+      end
+
       it "copy_sql should returns actual sql" do
         driver.run(default_tag: "test.metrics") { driver.feed(record) }
           expect(instance.last_sql).to eq("copy plugin_test from 's3://#{s3_bucket}/#{instance.last_gz_path}' CREDENTIALS 'aws_access_key_id=#{aws_key_id};aws_secret_access_key=#{aws_sec_key}' delimiter '\t' GZIP ESCAPE FILLRECORD ACCEPTANYDATE TRUNCATECOLUMNS ;")

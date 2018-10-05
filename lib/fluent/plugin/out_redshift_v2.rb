@@ -1,4 +1,13 @@
-class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
+require 'aws-sdk'
+require 'zlib'
+require 'time'
+require 'tempfile'
+require 'pg'
+require 'json'
+require 'csv'
+require 'fluent/plugin/output'
+
+class Fluent::Plugin::RedshiftOutputV2 < Fluent::Plugin::Output
   Fluent::Plugin.register_output('redshift_v2', self)
 
   attr_reader :last_sql, :last_gz_path
@@ -39,14 +48,6 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::BufferedOutput
 
   def initialize
     super
-
-    require 'aws-sdk'
-    require 'zlib'
-    require 'time'
-    require 'tempfile'
-    require 'pg'
-    require 'json'
-    require 'csv'
   end
 
   def configure(conf)

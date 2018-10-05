@@ -68,7 +68,7 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::Plugin::Output
       hostaddr: IPSocket.getaddress(@redshift_host)
     }
     @delimiter = determine_delimiter(@file_type) if @delimiter.nil? or @delimiter.empty?
-    $log.debug format_log("redshift file_type:#{@file_type} delimiter:'#{@delimiter}'")
+    log.debug format_log("redshift file_type:#{@file_type} delimiter:'#{@delimiter}'")
     @table_name_with_schema = [@redshift_schemaname, @redshift_tablename].compact.join('.')
     @redshift_copy_columns = if @redshift_copy_columns.to_s.empty?
                                nil
@@ -120,7 +120,7 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::Plugin::Output
   end
 
   def insert_logs(chunk)
-    $log.debug format_log("start creating gz.")
+    log.debug format_log("start creating gz.")
     exec_copy s3_uri(create_gz_file(chunk))
   end
 
@@ -144,7 +144,7 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::Plugin::Output
       tmp.close!
       @last_gz_path = key
     else
-      $log.debug format_log("received no valid data. ")
+      log.debug format_log("received no valid data. ")
       return false
     end
   end
@@ -165,14 +165,14 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::Plugin::Output
   end
 
   def exec_copy(s3_uri)
-    $log.debug format_log("start copying. s3_uri=#{s3_uri}")
+    log.debug format_log("start copying. s3_uri=#{s3_uri}")
     begin
       @redshift_connection.exec copy_sql(s3_uri)
-      $log.info format_log("completed copying to redshift. s3_uri=#{s3_uri}")
+      log.info format_log("completed copying to redshift. s3_uri=#{s3_uri}")
       true
     rescue RedshiftError => e
       if e.to_s =~ /^ERROR:  Load into table '[^']+' failed\./
-        $log.error format_log("failed to copy data into redshift due to load error. s3_uri=#{s3_uri}"), error:e.to_s
+        log.error format_log("failed to copy data into redshift due to load error. s3_uri=#{s3_uri}"), error:e.to_s
         return false
       end
       raise e
@@ -266,7 +266,7 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::Plugin::Output
     if redshift_table_columns == nil
       raise "failed to fetch the redshift table definition."
     elsif redshift_table_columns.empty?
-      $log.warn format_log("no table on redshift or cannot access table. table_name=#{@table_name_with_schema}")
+      log.warn format_log("no table on redshift or cannot access table. table_name=#{@table_name_with_schema}")
       return nil
     end
 
@@ -287,8 +287,8 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::Plugin::Output
           gzw.write(tsv_text) if tsv_text and not tsv_text.empty?
         rescue => e
           text = record.is_a?(Hash) ? record[@record_log_tag] : record
-          $log.error format_log("failed to create table text from #{@file_type}. text=(#{text})"), error:e.to_s
-          $log.error_backtrace
+          log.error format_log("failed to create table text from #{@file_type}. text=(#{text})"), error:e.to_s
+          log.error_backtrace
         end
       end
       return nil unless gzw.pos > 0
@@ -317,7 +317,7 @@ class Fluent::Plugin::RedshiftOutputV2 < Fluent::Plugin::Output
       values = redshift_table_columns.map { |cn| hash[cn] }
 
       if values.compact.empty?
-        $log.warn format_log("no data match for table columns on redshift. data=#{hash} table_columns=#{redshift_table_columns}")
+        log.warn format_log("no data match for table columns on redshift. data=#{hash} table_columns=#{redshift_table_columns}")
         return ''
       else
         generate_line_with_delimiter(values, delimiter)
